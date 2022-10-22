@@ -1,0 +1,263 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Svet API",
+        "version": "1.0"
+    },
+    "paths": {
+        "/api/v1/calendar/depression": {
+            "post": {
+                "tags": [
+                    "Календарь"
+                ],
+                "description": "Установка результатов теста на депрессию",
+                "operationId": "74036eda504ff0ba9dd321ef150393af",
+                "parameters": [
+                    {
+                        "name": "api_token",
+                        "in": "query",
+                        "description": "Защитный API токен"
+                    },
+                    {
+                        "name": "json",
+                        "in": "query",
+                        "description": "JSOТ вида: {\"22.10.2022\":{\"depression\" : 90}, \"23.10.2022\":{\"depression\" : 30}}"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The data"
+                    }
+                }
+            }
+        },
+        "/api/v1/calendar/mood": {
+            "post": {
+                "tags": [
+                    "Календарь"
+                ],
+                "description": "Установка настроений",
+                "operationId": "5e8abc5bdc52d616e09070e648a572ef",
+                "parameters": [
+                    {
+                        "name": "api_token",
+                        "in": "query",
+                        "description": "Защитный API токен"
+                    },
+                    {
+                        "name": "json",
+                        "in": "query",
+                        "description": "JSON вида: {\"16.10.2022\" : {\"mood\" : [2,1,-1,-2]}, \"18.10.2022\" : {\"mood\" : [0,0,2,-2]}}\". Где числа в квадратных скобках означают отрезок настроения по цифровой шкале от -2 до 2 включая 0, где -2 это самая низкая оценка, а 2 самая высокая"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The data"
+                    }
+                }
+            }
+        },
+        "/api/v1/notes/create": {
+            "post": {
+                "tags": [
+                    "Заметки"
+                ],
+                "description": "Добавление заметки",
+                "parameters": [
+                    {
+                        "name": "api_token",
+                        "in": "query",
+                        "description": "Защитный API токен"
+                    },
+                    {
+                        "name": "note",
+                        "in": "query",
+                        "description": "Текст заметки"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The data"
+                    }
+                }
+            }
+        },
+        "/api/v1/notes/delete": {
+            "post": {
+                "tags": [
+                    "Заметки"
+                ],
+                "description": "Удаление заметки",
+                "parameters": [
+                    {
+                        "name": "api_token",
+                        "in": "query",
+                        "description": "Защитный API токен"
+                    },
+                    {
+                        "name": "note_id",
+                        "in": "query",
+                        "description": "ID заметки"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The data"
+                    }
+                }
+            }
+        },
+        "/api/v1/user/create": {
+            "post": {
+                "tags": [
+                    "Пользователь"
+                ],
+                "description": "Регистрация",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "Почта"
+                    },
+                    {
+                        "name": "password",
+                        "in": "query",
+                        "description": "Пароль"
+                    },
+                    {
+                        "name": "login",
+                        "in": "query",
+                        "description": "Логин"
+                    },
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "Телефон"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The data"
+                    }
+                }
+            }
+        },
+        "/api/v1/verified": {
+            "post": {
+                "tags": [
+                    "Пользователь"
+                ],
+                "description": "Подтверждение регистрации по SMS (на данный момент по почте)",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": "ID пользователя"
+                    },
+                    {
+                        "name": "code",
+                        "in": "query",
+                        "description": "Код подтверждения"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The data"
+                    },
+                    "404": {
+                        "description": "error"
+                    }
+                }
+            }
+        },
+        "/api/v1/authorize": {
+            "post": {
+                "tags": [
+                    "Пользователь"
+                ],
+                "description": "Авторизация",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "E-Mail"
+                    },
+                    {
+                        "name": "password",
+                        "in": "query",
+                        "description": "Пароль"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The data"
+                    },
+                    "404": {
+                        "description": "error"
+                    }
+                }
+            }
+        },
+        "/api/v1/recovery/password": {
+            "post": {
+                "tags": [
+                    "Пользователь"
+                ],
+                "description": "Запрос (отправка кода) на смену пароля",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "E-Mail для восстановления"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The data"
+                    },
+                    "404": {
+                        "description": "error"
+                    }
+                }
+            }
+        },
+        "/api/v1/reset/password": {
+            "post": {
+                "tags": [
+                    "Пользователь"
+                ],
+                "description": "Подтверждение смены пароля",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "E-Mail"
+                    },
+                    {
+                        "name": "code",
+                        "in": "query",
+                        "description": "Код из E-Mail сообщения"
+                    },
+                    {
+                        "name": "password1",
+                        "in": "query",
+                        "description": "Пароль 1"
+                    },
+                    {
+                        "name": "password2",
+                        "in": "query",
+                        "description": "Пароль 2"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The data"
+                    },
+                    "404": {
+                        "description": "error"
+                    }
+                }
+            }
+        }
+    }
+}

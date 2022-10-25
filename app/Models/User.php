@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 
 
@@ -49,18 +50,20 @@ class User extends Authenticatable
         $this->notify(new ResetPasswordNotification($token));
     }
 
-//    public function apiTokenGenerate() {
-//        $users = User::all();
-//
-//        $token = makeRandomToken();
-//        foreach ($users as $user) {
-//            # Если токен найден среди пользователей, то делаем рекурсию
-//            if($user->api_token ==) {
-//
-//            }
-//        }
-//
-//        self::apiTokenGenerate();
-//        return 'generate';
-//    }
+    # Поиск триггера по ID и USER_ID
+    public function trigger($trigger_id, $user_id) {
+        $result = $this->hasMany(Trigger::class, 'user_id')
+            ->where('user_id', $user_id)->where('id', $trigger_id)->first();
+
+        if(!isset($result)) {
+            return false;
+        }
+
+        return $result;
+    }
+
+    public function triggersToday() {
+        return $this->hasMany(Trigger::class, 'user_id')->where("created_at", "<", Carbon::tomorrow())->where("created_at", ">", Carbon::yesterday()->addDay())->count();
+    }
+
 }

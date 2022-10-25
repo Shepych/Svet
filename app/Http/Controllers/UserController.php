@@ -138,7 +138,7 @@ class UserController extends Controller
         ])->errors()->all();
 
         if($validate) {
-            return response()->json(['errors' => $validate]);
+            return response()->json(['status' => ['errors' => $validate]]);
         }
 
         # Генератор SMS кода
@@ -157,7 +157,7 @@ class UserController extends Controller
 
         # Вернуть ID пользоваетял
         return response()->json([
-            'success' => 'Пользователь зарегистрирован',
+            'status' => ['success' => 'Пользователь успешно зарегистрирован'],
             'user_id' => $user->id,
             'verification_code' => $verificationCode,
         ]);
@@ -167,10 +167,10 @@ class UserController extends Controller
     public function sms(Request $request) {
         # Выслать новый код спустя время (тоже параметр + поле в БД)
         $user = User::where('id', $request->user_id);
-        if(!$user->exists()) return response()->json(['success' => 'Пользователь не найден']);
+        if(!$user->exists()) return response()->json(['status' => ['error' => 'Пользователь не найден']]);
 
         $user = $user->first();
-        if($user->code == null) return response()->json(['success' => 'Код уже подтверждён']);
+        if($user->code == null) return response()->json(['status' => ['error' => 'Код уже подтверждён']]);
 
         # Отправка нового кода
         if($request->refresh) {
@@ -183,15 +183,15 @@ class UserController extends Controller
                 $user->code_sent_at = Carbon::now();
                 $user->update();
 
-                return response()->json(['success' => 'Новый код отправлен по SMS']);
+                return response()->json(['status' => ['success' => 'Новый код отправлен по SMS']]);
             } else {
-                return response()->json(['error' => 'Подождите 10 минут']);
+                return response()->json(['status' => ['error' => 'Подождите 10 минут']]);
             }
         }
 
         # Обработка исключения
         if(!$user) {
-            return response()->json(['error' => 'Пользователь не найден']);
+            return response()->json(['status' => ['error' => 'Пользователь не найден']]);
         }
 
         if($user->code == $request->code) {
@@ -199,11 +199,12 @@ class UserController extends Controller
             $user->code = null;
             $user->update();
             return response()->json([
+                'status' => ['success' => 'Аккаунт успешно подтверждён'],
                 'user' => User::where('id', $request->user_id)->first()
             ]);
         }
 
-        return response()->json(['error' => 'Неверный код подтверждения']);
+        return response()->json(['status' => ['error' => 'Неверный код подтверждения']]);
     }
 
     # Авторизация в приложение
@@ -217,7 +218,7 @@ class UserController extends Controller
             'password.required' => 'Введите пароль',
         ])->errors();
         if($validate->any()) {
-            return ['error' => $validate->all()];
+            return ['status' => ['error' => $validate->all()]];
         }
 
         # Проверка на подтверждение аккаунта
@@ -225,7 +226,7 @@ class UserController extends Controller
 
 
         if(!empty($user->code)) {
-            return response()->json(['error' => 'Аккаунт не подтверждён']);
+            return response()->json(['status' => ['error' => 'Аккаунт не подтверждён']]);
         }
 
         # Проверка данных
@@ -237,11 +238,14 @@ class UserController extends Controller
         # Если данные верные - возвращаем массив с данными для пользователя
         if (Auth::attempt($credentials)) {
             return response()->json([
-                'user' => $user
+                'status' => ['success' => 'Успешная авторизация'],
+                'user' => $user,
+                'triggers' => null,
+                'notes' => null,
             ]);
         }
 
-        return response()->json(['error' => 'Неверные данные']);
+        return response()->json(['status' => ['error' => 'Неверные данные']]);
     }
 
     # Отправка кода для восстановления
@@ -249,12 +253,12 @@ class UserController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if(!$user) {
-            return ['error' => 'Пользователь не найден'];
+            return ['status' => ['error' => 'Пользователь не найден']];
         }
 
         # Повторная отправка кода только через минуту
         if($user->remember_token != null && Carbon::parse($user->remember_sent_at)->addMinute() >= Carbon::now()) {
-            return ['error' => 'Новый код можно отправить только через минуту'];
+            return ['status' => ['error' => 'Новый код можно отправить только через минуту']];
         }
 
         # Генератор кода
@@ -271,7 +275,7 @@ class UserController extends Controller
             $message->from($request->email, 'От кого')->subject('Recovery test');
         });
 
-        return ['success' => 'Код восстановления отправлен на почту'];
+        return ['status' => ['success' => 'Код восстановления отправлен на почту']];
     }
 
     # Смена пароля
@@ -280,12 +284,12 @@ class UserController extends Controller
         # Проверить по sent_at
 
         if(!$user) {
-            return ['error' => 'Пользователь не найден'];
+            return ['status' => ['error' => 'Пользователь не найден']];
         }
 
         # Проверка на лимит попыток
         if($user->remember_attempts >= self::$rememberAttempts) {
-            return ['error' => 'Лимит попыток исчерпан - запросите новый код'];
+            return ['status' => ['error' => 'Лимит попыток исчерпан - запросите новый код']];
         }
 
         # Проверка правильности кода
@@ -293,7 +297,7 @@ class UserController extends Controller
             # Обновляем счетчик попыток
             $user->remember_attempts+= 1;
             $user->update();
-            return ['error' => 'Неверный код'];
+            return ['status' => ['error' => 'Неверный код']];
         }
 
         # Валидация
@@ -304,11 +308,11 @@ class UserController extends Controller
             'password1.min' => 'Пароль должен содержать минимум 8 символов',
         ])->errors();
         if($validate->any()) {
-            return ['error' => $validate->all()];
+            return ['status' => ['error' => $validate->all()]];
         }
 
         if($request->password1 != $request->password2) {
-            return ['error' => 'Пароли не совпадают'];
+            return ['status' => ['error' => 'Пароли не совпадают']];
         }
 
         # Обновить Hash
@@ -318,6 +322,9 @@ class UserController extends Controller
         $user->remember_sent_at = null;
         $user->update();
 
-        return ['success' => 'Пароль успешно сменён'];
+        return [
+            'status' => ['success' => 'Пароль изменён'],
+            'password' => $user->password
+        ];
     }
 }

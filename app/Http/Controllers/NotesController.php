@@ -42,7 +42,7 @@ class NotesController extends Controller
      *     )
      **/
 
-    public static $maxNotes = 4;
+    public static $maxNotes = 10;
 
     # Добавление заметки
     public function create(Request $request) {
@@ -51,6 +51,7 @@ class NotesController extends Controller
             'notes' => 'required|json',
         ],[
             'notes.required' => 'Напишите заметку',
+            'notes.json' => 'Только JSON формат',
         ])->errors();
         if($validate->any()) {
             return ['error' => $validate->all()];
@@ -71,7 +72,12 @@ class NotesController extends Controller
         $user->notes = $notes;
         $user->save();
 
-        return ['success' => 'Заметка добавлена'];
+        return [
+            'status' => [
+                'success' => 'Заметки добавлены'
+            ],
+            'notes' => $user->notes
+        ];
     }
 
     # Удаление заметки
@@ -101,6 +107,11 @@ class NotesController extends Controller
         $user->notes = $notes;
         $user->save();
 
-        return ['success' => 'Заметка №' . $request->note_id . ' удалена'];
+        return [
+            'status' => [
+                'success' => 'Заметка удалена'
+            ],
+            'notes' => $user->notes
+        ];
     }
 }

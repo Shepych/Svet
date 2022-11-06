@@ -21,7 +21,7 @@
                     {
                         "name": "json",
                         "in": "query",
-                        "description": "JSOТ вида: {\"22.10.2022\":{\"depression\" : 90}, \"23.10.2022\":{\"depression\" : 30}}"
+                        "description": "JSON вида: {\"22.10.2022\":{\"depression\" : 90}, \"23.10.2022\":{\"depression\" : 30}}"
                     }
                 ],
                 "responses": {
@@ -98,6 +98,99 @@
                         "name": "note_id",
                         "in": "query",
                         "description": "ID заметки"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The data"
+                    }
+                }
+            }
+        },
+        "/api/v1/trigger/create": {
+            "post": {
+                "tags": [
+                    "Триггеры"
+                ],
+                "description": "Создание триггера",
+                "operationId": "7749cc84cb886ba1fe4e893402a2508a",
+                "parameters": [
+                    {
+                        "name": "api_token",
+                        "in": "query",
+                        "description": "Защитный API токен"
+                    },
+                    {
+                        "name": "event",
+                        "in": "query",
+                        "description": "Событие"
+                    },
+                    {
+                        "name": "feels",
+                        "in": "query",
+                        "description": "Ощущения"
+                    },
+                    {
+                        "name": "action",
+                        "in": "query",
+                        "description": "Действией"
+                    },
+                    {
+                        "name": "thoughts",
+                        "in": "query",
+                        "description": "Мысли"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The data"
+                    }
+                }
+            }
+        },
+        "/api/v1/trigger/thinking": {
+            "post": {
+                "tags": [
+                    "Триггеры"
+                ],
+                "description": "Установка позитивного мышления спустя 24ч",
+                "operationId": "d8743fbf81ab4234e2062cc48da6ab11",
+                "parameters": [
+                    {
+                        "name": "api_token",
+                        "in": "query",
+                        "description": "Защитный API токен"
+                    },
+                    {
+                        "name": "thinking",
+                        "in": "query",
+                        "description": "Описание"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The data"
+                    }
+                }
+            }
+        },
+        "/api/v1/trigger/delete": {
+            "post": {
+                "tags": [
+                    "Триггеры"
+                ],
+                "description": "Удаление триггера",
+                "operationId": "8a09db92e54f94c77238e925034247c2",
+                "parameters": [
+                    {
+                        "name": "api_token",
+                        "in": "query",
+                        "description": "Защитный API токен"
+                    },
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "ID триггера"
                     }
                 ],
                 "responses": {

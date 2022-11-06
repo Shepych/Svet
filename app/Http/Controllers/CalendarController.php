@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BlackList;
+use App\Models\Calendar;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -25,7 +26,7 @@ class CalendarController extends Controller
      *     @OA\Parameter(
      *     name="json",
      *     in="query",
-     *     description="JSOТ вида: {""22.10.2022"":{""depression"" : 90}, ""23.10.2022"":{""depression"" : 30}}")
+     *     description="JSON вида: {""22.10.2022"":{""depression"" : 90}, ""23.10.2022"":{""depression"" : 30}}")
      * ),
      * @OA\Post(
      *     tags={"Календарь"},
@@ -42,6 +43,7 @@ class CalendarController extends Controller
              *     description="JSON вида: {""16.10.2022"" : {""mood"" : [2,1,-1,-2]}, ""18.10.2022"" : {""mood"" : [0,0,2,-2]}}"". Где числа в квадратных скобках означают отрезок настроения по цифровой шкале от -2 до 2 включая 0, где -2 это самая низкая оценка, а 2 самая высокая")
      * ),
      */
+
     # Ежедневный тест на депрессию
     public function depression(Request $request) {
         # Валидация
@@ -56,7 +58,7 @@ class CalendarController extends Controller
 
         $user = User::where('api_token', $request->api_token);
         $user = $user->first();
-        $depression_tests = json_decode($user->depression_tests, true);
+        $depression_tests = json_decode($user->calendar()->depression_tests, true);
 
         $days = json_decode($request->json, true);
         foreach ($days as $day => $points) {
@@ -90,8 +92,9 @@ class CalendarController extends Controller
         }
 
         # Обновляем календарь депрессии
-        $user->depression_tests = $depression_tests;
-        $user->update();
+        Calendar::where('user_id', $user->id)->update([
+            'depression_tests' => $depression_tests
+        ]);
 
         return $depression_tests;
     }
@@ -110,13 +113,13 @@ class CalendarController extends Controller
 
         $user = User::where('api_token', $request->api_token);
         $user = $user->first();
-        $userMood = json_decode($user->mood, true);
+
+        $userMood = json_decode($user->calendar()->mood, true);
         $days = json_decode($request->json, true);
         $result = [];
         foreach ($days as $day => $mood) {
             # Запретить замену результатов КРОМЕ СЕГОДНЯШНЕГО ДНЯ
             if(isset($userMood[$day]) && Carbon::parse($day) != Carbon::parse(date('d.m.Y'))) {
-
                 continue;
             }
 
@@ -137,7 +140,6 @@ class CalendarController extends Controller
             }
 
             # Валидация настроений
-//            return $mood['mood'];
             foreach ($mood['mood'] as $item) {
                 if(!is_int($item) || $item > 2 || $item < -2) {
                     return ['error' => 'Некорректные данные'];
@@ -154,9 +156,39 @@ class CalendarController extends Controller
             $userMood[$day] = $item;
         }
 
-        $user->mood = $userMood;
-        $user->save();
+        # Обновляем настроение в календаре
+        Calendar::where('user_id', $user->id)->update([
+            'mood' => $userMood
+        ]);
 
         return $userMood;
+    }
+
+    # Получение записей календаря +
+    public function data(Request $request) {
+        # Обработка по месяцам и годам
+        $user = User::where('api_token', $request->api_token)->first();
+        $calendar = Calendar::where('user_id', $user->id)->first();
+        $data = json_decode($calendar->mood, true);
+        $depressions = json_decode($calendar->depression_tests, true);
+
+        foreach ($depressions as $key => $item) {
+            $data[$key]['depression'] = $item;
+        }
+
+        if($request->month && $request->year) {
+            $selectData = [];
+            foreach ($data as $key => $item) {
+                $year = substr($key, -4);
+                $month = substr(substr($key, 3), 0, -5);
+                if($year == $request->year && $month == $request->month) {
+                    $selectData[$key] = $item;
+                }
+            }
+
+            return $selectData;
+        }
+
+        return $data;
     }
 }

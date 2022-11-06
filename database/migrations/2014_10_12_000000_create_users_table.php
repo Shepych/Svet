@@ -27,9 +27,6 @@ return new class extends Migration
             $table->timestamp('remember_sent_at')->nullable();
             $table->integer('remember_attempts')->default(0);
             $table->string('api_token')->nullable();
-            $table->json('mood')->default('[]');
-            $table->json('depression_tests')->default('[]');
-            $table->json('notes')->default('[]');
 
             $table->timestamps();
         });

@@ -2,15 +2,14 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\ModeratorController;
 use App\Models\BlackList;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 
-class ApiDefense
+class ApiModeratorDefense
 {
-
-    public static $limitAttempts = 30;
     /**
      * Handle an incoming request.
      *
@@ -23,17 +22,14 @@ class ApiDefense
         $ip = BlackList::where('ip', $request->ip())->first();
 
         # Проверка на блокировку IP
-        if(isset($ip) && $ip->attempts >= self::$limitAttempts) {
+        if(isset($ip) && $ip->attempts >= ApiDefense::$limitAttempts) {
             return response(['status' => ['error' => 'IP Заблокирован']], 403);
         }
 
-        $user = User::where('api_token', $request->api_token);
-
-        # Валидация пользователя
-        if(!$user->exists()) {
-            # Обновить Black List
+        # 3 API ключа для безопасности
+        if($request->api_token_1 != ModeratorController::$api_token_1 || $request->api_token_2 != ModeratorController::$api_token_2) {
             BlackList::attempt($request->ip());
-            return response(['status' => ['error' => 'Неверный токен']], 503);
+            return response(['status' => ['error' => 'Неверные токены']], 503);
         }
 
         return $next($request);

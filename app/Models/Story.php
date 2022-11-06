@@ -5,27 +5,21 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
-class Trigger extends Model
+class Story extends Model
 {
-    protected $table = 'triggers';
-    public $timestamps = false;
-
-    public static $dailyLimitTriggers = 10;
-
     use HasFactory;
+    protected $table = 'stories';
 
     public static function create($user_id, $request) {
         $data = [
             'user_id' => $user_id,
-            'event' => $request->event,
-            'thoughts' => $request->thoughts,
-            'feeling' => $request->feeling,
-            'action' => $request->action,
+            'title' => $request->title ? $request->title : null,
+            'content' => $request->content,
+            'status' => false,
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
         ];
-        Trigger::insert($data);
+        self::insert($data);
     }
 }

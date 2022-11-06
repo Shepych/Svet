@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Notes;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use function PHPUnit\Framework\isType;
@@ -44,74 +45,73 @@ class NotesController extends Controller
 
     public static $maxNotes = 10;
 
-    # Добавление заметки
+    # Добавление заметки +
     public function create(Request $request) {
         # Валидация
         $validate = Validator::make($request->all(), [
-            'notes' => 'required|json',
+            'note' => 'required',
         ],[
-            'notes.required' => 'Напишите заметку',
-            'notes.json' => 'Только JSON формат',
+            'note.required' => 'Напишите заметку',
         ])->errors();
         if($validate->any()) {
-            return ['error' => $validate->all()];
+            return ['status' => ['error' => $validate->all()]];
         }
 
         $user = User::where('api_token', $request->api_token)->first();
-        $notes = json_decode($user->notes, true);
 
+        $notes = Notes::where("created_at", "<", Carbon::tomorrow())->where("created_at", ">", Carbon::yesterday()->addDay())->count();
         # Ограничение на число заметок
-        if(count($notes) >= self::$maxNotes) {
-            return ['error' => 'Ограничение на добавление заметок: ' . self::$maxNotes];
+        if($notes >= self::$maxNotes) {
+            return ['status' => ['error' => 'Ограничение на добавление заметок: ' . self::$maxNotes]];
         }
 
-        foreach (json_decode($request->notes, true) as $note) {
-            $notes[] = $note;
-        }
-
-        $user->notes = $notes;
-        $user->save();
+        Notes::insert([
+            'user_id' => $user->id,
+            'note' => $request->note,
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+        ]);
 
         return [
             'status' => [
-                'success' => 'Заметки добавлены'
+                'success' => 'Заметка добавлена'
             ],
-            'notes' => $user->notes
         ];
     }
 
-    # Удаление заметки
+    # Удаление заметки +
     public function destroy(Request $request) {
-        # Валидация
         $validate = Validator::make($request->all(), [
             'note_id' => 'required|integer',
         ],[
-            'note_id.required' => 'Напишите заметку',
+            'note_id.required' => 'ID отсутствует',
             'note_id.integer' => 'Номер заметки должен быть целым числом',
         ])->errors();
-
+        # Валидация
         if($validate->any()) {
-            return ['error' => $validate->all()];
+            return ['status' => ['error' => $validate->all()]];
         }
 
         $user = User::where('api_token', $request->api_token)->first();
-        $notes = json_decode($user->notes);
+        $note = Notes::where('user_id', $user->id)->where('id', $request->note_id);
         # Проверка на существование заметки по ID
-        if(!isset($notes[$request->note_id - 1])) {
-            return ['error' => 'Заметка не найдена'];
+        if(!$note->exists()) {
+            return ['status' => ['error' => 'Заметка не найдена']];
         }
 
         # Удаление заметки
-        unset($notes[$request->note_id - 1]);
-        $notes = array_values($notes);
-        $user->notes = $notes;
-        $user->save();
+        $note->delete();
 
         return [
             'status' => [
                 'success' => 'Заметка удалена'
             ],
-            'notes' => $user->notes
         ];
+    }
+
+    # Получение списка заметок +
+    public function getList(Request $request) {
+        $user = User::where('api_token', $request->api_token)->first();
+        return Notes::where('user_id', $user->id)->paginate(5)->items();
     }
 }

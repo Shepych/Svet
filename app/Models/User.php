@@ -10,11 +10,12 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -62,8 +63,13 @@ class User extends Authenticatable
         return $result;
     }
 
+    # Сегодняшние триггеры
     public function triggersToday() {
         return $this->hasMany(Trigger::class, 'user_id')->where("created_at", "<", Carbon::tomorrow())->where("created_at", ">", Carbon::yesterday()->addDay())->count();
     }
 
+    # Связь с календарём
+    public function calendar() {
+        return $this->hasMany(Calendar::class, 'user_id')->first();
+    }
 }

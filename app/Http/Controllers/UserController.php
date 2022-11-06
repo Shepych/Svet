@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Calendar;
+use App\Models\Notes;
+use App\Models\Trigger;
 use App\Models\User;
 use Carbon\Carbon;
 use Faker\Factory;
@@ -110,7 +113,7 @@ class UserController extends Controller
     # Максимальное количество неверных попыток для сброса пароля
     public static $rememberAttempts = 6;
 
-    # Создание пользователя
+    # Создание пользователя +
     public function create(Request $request) {
         # Валидация
         $validate = Validator::make([
@@ -155,6 +158,13 @@ class UserController extends Controller
         $user->api_token = (new Token())->Unique('users', 'api_token', 100);
         $user->save();
 
+        # Создание записи в календаре
+        Calendar::insert([
+            'user_id' => $user->id,
+            'mood' => '{}',
+            'depression_tests' => '{}',
+        ]);
+
         # Вернуть ID пользоваетял
         return response()->json([
             'status' => ['success' => 'Пользователь успешно зарегистрирован'],
@@ -163,7 +173,7 @@ class UserController extends Controller
         ]);
     }
 
-    # SMS подтверждение
+    # SMS подтверждение +
     public function sms(Request $request) {
         # Выслать новый код спустя время (тоже параметр + поле в БД)
         $user = User::where('id', $request->user_id);
@@ -207,7 +217,7 @@ class UserController extends Controller
         return response()->json(['status' => ['error' => 'Неверный код подтверждения']]);
     }
 
-    # Авторизация в приложение
+    # Авторизация в приложение +
     public function auth(Request $request) {
         # Валидация
         $validate = Validator::make($request->all(), [
@@ -240,15 +250,15 @@ class UserController extends Controller
             return response()->json([
                 'status' => ['success' => 'Успешная авторизация'],
                 'user' => $user,
-                'triggers' => null,
-                'notes' => null,
+                'triggers' => Trigger::where('user_id', $user->id)->get(),
+                'notes' => Notes::where('user_id', $user->id)->get(),
             ]);
         }
 
         return response()->json(['status' => ['error' => 'Неверные данные']]);
     }
 
-    # Отправка кода для восстановления
+    # Отправка кода для восстановления +
     public function recovery(Request $request) {
         $user = User::where('email', $request->email)->first();
 
@@ -278,7 +288,7 @@ class UserController extends Controller
         return ['status' => ['success' => 'Код восстановления отправлен на почту']];
     }
 
-    # Смена пароля
+    # Смена пароля +
     public function reset(Request $request) {
         $user = User::where('email', $request->email)->first();
         # Проверить по sent_at

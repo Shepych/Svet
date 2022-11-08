@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BlackList;
 use App\Models\Calendar;
+use App\Models\Story;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -50,10 +51,11 @@ class CalendarController extends Controller
         $validate = Validator::make($request->all(), [
             'json' => 'required|json',
         ],[
+            'json.required' => 'Данные отсутствуют',
             'json.json' => 'Только JSON формат',
         ])->errors();
         if($validate->any()) {
-            return ['error' => $validate->all()];
+            return ['status' => ['error' => $validate->all()]];
         }
 
         $user = User::where('api_token', $request->api_token);
@@ -108,7 +110,7 @@ class CalendarController extends Controller
             'json.json' => 'Только JSON формат',
         ])->errors();
         if($validate->any()) {
-            return ['error' => $validate->all()];
+            return ['status' => ['error' => $validate->all()]];
         }
 
         $user = User::where('api_token', $request->api_token);
@@ -142,7 +144,7 @@ class CalendarController extends Controller
             # Валидация настроений
             foreach ($mood['mood'] as $item) {
                 if(!is_int($item) || $item > 2 || $item < -2) {
-                    return ['error' => 'Некорректные данные'];
+                    return ['status' => ['error' => 'Некорректные данные']];
                 }
             }
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\StoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\NotesController;
 use App\Http\Controllers\TriggerController;
@@ -36,7 +37,7 @@ Route::middleware(['api_defense'])->group(function () {
     Route::post('/calendar/mood', [CalendarController::class, 'mood']);
 
     # Получение календаря
-    Route::post('/calendar/data', [CalendarController::class, 'data']);
+    Route::get('/calendar/data', [CalendarController::class, 'data']);
 
     {   # Создание заметки
         Route::post('/notes/create', [NotesController::class, 'create']);
@@ -65,6 +66,16 @@ Route::middleware(['api_defense'])->group(function () {
     {   # Список уведомлений
         Route::post('/notifications/list', [NotificationController::class, 'getList']);
     }
+
+    {   # Запрос на смену телефона
+        Route::post('/reset/phone', [UserController::class, 'resetPhone']);
+        # Подтверждение смены телефона
+        Route::post('/reset/phone/confirm', [UserController::class, 'resetPhoneConfirm']);
+    }
+
+    {   # Список статей
+        Route::post('/articles', [ArticleController::class, 'get']);
+    }
 });
 
 # Контроллеры модератора
@@ -84,4 +95,12 @@ Route::middleware(['api_defense', 'moderator_check'])->controller(ModeratorContr
     Route::post('/moderator/archive', 'archive');
     # Глобальное уведомление
     Route::post('/notifications/general', [NotificationController::class, 'generalNotice']);
+
+    {   # Добавление статьи
+        Route::post('/article/create', [ArticleController::class, 'create']);
+        # Изменение статьи
+        Route::post('/article/edit', [ArticleController::class, 'edit']);
+        # Удаление статьи
+        Route::post('/article/delete', [ArticleController::class, 'delete']);
+    }
 });

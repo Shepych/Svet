@@ -3,7 +3,10 @@
 namespace App\Console;
 
 use App\Http\Middleware\ApiDefense;
+use App\Models\Archive;
 use App\Models\BlackList;
+use App\Models\Notification;
+use App\Models\Story;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
@@ -45,6 +48,34 @@ class Kernel extends ConsoleKernel
                 }
             }
         })->everyMinute();
+
+        # Удаление уведомлений с недельным сроком годности
+        $schedule->call(function () {
+            $archive = Notification::where('created_at', '<', Carbon::now()->addWeek())->get();
+
+            foreach ($archive as $item) {
+                $item->delete();
+            }
+        })->everyFiveMinutes();
+
+        # Снятие модерации с истории спустя 30 минут бездействия, для передачи другому модератору
+        $schedule->call(function () {
+            $stories = Story::where('moderator_id', '<>', NULL)->where('status', false)->where('updated_at', '<', Carbon::now()->addMinutes(-30))->get();
+
+            foreach ($stories as $item) {
+                $item->moderator_id = null;
+                $item->update();
+            }
+        })->everyMinute();
+
+        # Удаление архивных записей с месячным сроком годности
+        $schedule->call(function () {
+            $archive = Archive::where('created_at', '<', Carbon::now()->addMonth())->get();
+
+            foreach ($archive as $item) {
+                $item->delete();
+            }
+        })->everyTwoHours();
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Calendar;
 use App\Models\Notes;
+use App\Models\ResetPhone;
 use App\Models\Trigger;
 use App\Models\User;
 use Carbon\Carbon;
@@ -336,5 +337,98 @@ class UserController extends Controller
             'status' => ['success' => 'Пароль изменён'],
             'password' => $user->password
         ];
+    }
+
+    # Запрос на смену телефона
+    public function resetPhone(Request $request) {
+        # Валидация
+        $validate = Validator::make($request->all(), [
+            'phone' => 'required|numeric|min:10',
+        ],[
+            'phone.required' => 'Введите номер телефона',
+            'phone.numeric' => 'Должны быть только цифры',
+            'phone.min' => 'Минимум 10 символов',
+        ])->errors();
+        if($validate->any()) {
+            return ['status' => ['error' => $validate->all()]];
+        }
+
+        $user = User::where('api_token', $request->api_token)->first();
+
+        $reset = ResetPhone::where('user_id', $user->id)->first();
+
+        # Генератор кода
+        $faker = Factory::create();
+        $code = $faker->numerify('#######');
+
+        # Повторная отправка кода только через минуту
+        if(isset($reset)) {
+            if(Carbon::parse($reset->created_at)->addMinute() >= Carbon::now()) {
+                return [
+                    'status' => ['error' => 'Новый код можно отправить только через минуту'],
+                    'code' => $reset->code,
+                ];
+            } else {
+                # Повторная отправка
+                $reset->code = $code;
+                $reset->attempts = 0;
+                $reset->update();
+            }
+        } else {
+            ResetPhone::insert([
+                'user_id' => $user->id,
+                'phone' => $request->phone,
+                'code' => $code,
+                'attempts' => 0,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ]);
+        }
+
+        return [
+            'status' => ['success' => 'Код отправлен'],
+            'code' => $code,
+        ];
+
+    }
+
+    # Подтверждение смены телефона
+    public function resetPhoneConfirm(Request $request) {
+        $user = User::where('api_token', $request->api_token)->first();
+        $reset = ResetPhone::where('user_id', $user->id)->first();
+
+        if(!isset($reset)) {
+            return ['status' => ['error' => 'Запросите код восстановления']];
+        }
+
+        # Валидация
+        $validate = Validator::make($request->all(), [
+            'code' => 'required',
+        ],[
+            'code.required' => 'Введите код',
+        ])->errors();
+        if($validate->any()) {
+            return ['status' => ['error' => $validate->all()]];
+        }
+
+        # Проверка на неправильные вводы
+        if($reset->attemtps >= self::$rememberAttempts) {
+            return ['status' => ['error' => 'Лимит попыток исчерпан - запросите новый код']];
+        }
+
+        # Проверка кода
+        if($reset->code != $request->code) {
+            $reset->attempts++;
+            $reset->update();
+            return ['status' => ['error' => 'Неверный код']];
+        }
+
+        # Заменить номер и удалить запись
+        $user->phone = $reset->phone;
+        $user->update();
+
+        $reset->delete();
+
+        return ['status' => ['success' => 'Номер телефона успешно заменён']];
     }
 }

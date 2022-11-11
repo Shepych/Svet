@@ -10,6 +10,8 @@ use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\NotesController;
 use App\Http\Controllers\TriggerController;
+use App\Http\Controllers\DiaryController;
+use App\Http\Controllers\LetterController;
 
 # Регистрация
 Route::post('/user/create', [UserController::class, 'create']);
@@ -73,8 +75,26 @@ Route::middleware(['api_defense'])->group(function () {
         Route::post('/reset/phone/confirm', [UserController::class, 'resetPhoneConfirm']);
     }
 
-    {   # Список статей
+    {   # Получение списка статей, а так же одной записи
         Route::post('/articles', [ArticleController::class, 'get']);
+    }
+
+    {   # Дневник - чеклист
+        Route::post('/diary/checklist/add', [DiaryController::class, 'checkListAdd']);
+        Route::post('/diary/checklist/edit', [DiaryController::class, 'checkListEdit']);
+        Route::post('/diary/checklist/delete', [DiaryController::class, 'checkListDelete']);
+        Route::get('/diary/checklist', [DiaryController::class, 'getCheckListData']);
+
+        # Дневник - заметки
+        Route::post('/diary/note/add', [DiaryController::class, 'noteAdd']);
+        Route::post('/diary/note/delete', [DiaryController::class, 'noteDelete']);
+        Route::get('/diary/notes', [DiaryController::class, 'getNotesData']);
+    }
+
+    {   # Письма
+        Route::post('/letter/add', [LetterController::class, 'add']);
+        Route::post('/letter/delete', [LetterController::class, 'delete']);
+        Route::get('/letters', [LetterController::class, 'get']);
     }
 });
 

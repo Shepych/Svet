@@ -59,7 +59,7 @@ class NotesController extends Controller
 
         $user = User::where('api_token', $request->api_token)->first();
 
-        $notes = Notes::where("created_at", "<", Carbon::tomorrow())->where("created_at", ">", Carbon::yesterday()->addDay())->count();
+        $notes = Notes::where("created_at", "<", Carbon::tomorrow())->where('user_id', $user->id)->where("created_at", ">", Carbon::yesterday()->addDay())->count();
         # Ограничение на число заметок
         if($notes >= self::$maxNotes) {
             return ['status' => ['error' => 'Ограничение на добавление заметок: ' . self::$maxNotes]];
